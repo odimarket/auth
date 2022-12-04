@@ -1,0 +1,35 @@
+'use strict';
+const { Model } = require('sequelize');
+const uuid = require('uuid');
+module.exports = (sequelize, DataTypes) => {
+  class scopes extends Model {
+    /**
+     * Helper method for defining associations.
+     * This method is not a part of Sequelize lifecycle.
+     * The `models/index` file will call this method automatically.
+     */
+    static associate(models) {
+      // define association here
+      scopes.belongsTo(models.groups, {
+        foreignKey: 'group_id',
+      });
+      scopes.belongsTo(models.roles, {
+        foreignKey: 'role_id',
+      });
+    }
+  }
+  scopes.init(
+    {
+      name: DataTypes.STRING,
+      description: DataTypes.TEXT,
+      group_id: DataTypes.STRING,
+      role_id: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      modelName: 'scopes',
+    }
+  );
+  scopes.beforeCreate((scope) => (scope.id = uuid.v4()));
+  return scopes;
+};

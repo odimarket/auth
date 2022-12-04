@@ -1,0 +1,40 @@
+{
+  "name": "odimarket_auth",
+  "version": "1.0.0",
+  "description": "Auth endpoint for odimarket",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "migrate": "npx sequelize-cli db:migrate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/odimarket/odimarket_auth.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/odimarket/odimarket_auth/issues"
+  },
+  "homepage": "https://github.com/odimarket/odimarket_auth#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "express-session": "^1.17.3",
+    "joi": "^17.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "^2.3.3",
+    "node-mailer": "^0.1.1",
+    "nodemailer": "^6.7.5",
+    "otp-generator": "^4.0.0",
+    "request": "^2.88.2",
+    "sequelize": "^6.20.0",
+    "sequelize-cli": "^6.4.1",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}
