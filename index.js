@@ -5,17 +5,6 @@ const jwt = require('jsonwebtoken');
 const app = express();
 
 require('dotenv').config();
-const db = require('./config/db');
-
-// Activating session
-app.use(
-  session({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: true },
-  })
-);
 
 // bodyParser middleware
 app.use(express.json());
