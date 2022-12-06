@@ -13,6 +13,7 @@ app.use(express.urlencoded({ extended: false }));
 /**
  * All auth routes
  */
+app.get('/', (req, res) => res.send('Auth API'));
 app.use('/user', require('./routes/users.route'));
 app.use('/auth', require('./routes/auth.route'));
 app.use('/product', require('./routes/products.route'));
