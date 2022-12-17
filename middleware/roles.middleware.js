@@ -3,7 +3,11 @@ const Joi = require('joi');
 const schema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  group_id: Joi.string().required(),
+  code: Joi.string().required(),
+  product_id: Joi.string().required(),
+  client_id: Joi.string().required(),
+
+  product_code: Joi.string(),
 });
 
 exports.isInputValidated = async (req, res, next) => {

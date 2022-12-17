@@ -7,11 +7,10 @@ const schema = Joi.object({
     .required()
     .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }),
   phone: Joi.string().required(),
-  password: Joi.string().required(),
-  product_id: Joi.string().required(),
-  client_id: Joi.string().required(),
-  group_id: Joi.string().required(),
-  role_id: Joi.string().required(),
+  password: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
+  role: Joi.string().required(),
+  product_code: Joi.string().required(),
+  client: Joi.string().required(),
 });
 
 exports.isInputValidated = async (req, res, next) => {

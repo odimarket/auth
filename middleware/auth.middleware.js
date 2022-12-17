@@ -12,19 +12,26 @@ const hashPassword = (password) => {
   return hash;
 };
 
-const schema = Joi.object({
+const forgotPasswordSchema = Joi.object({
   user: Joi.string().required(),
+  product_code: Joi.string().required(),
 });
 
-const passwordSchema = Joi.object({
-  password: Joi.string().required(),
+const productCodeSchema = Joi.object({
+  product_code: Joi.string().required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  password: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
 
   password_confirmation: Joi.ref('password'),
+  product_code: Joi.string().required(),
 });
 
 const signinSchema = Joi.object({
   user: Joi.string().required(),
   password: Joi.string().required(),
+  product_code: Joi.string().required(),
 });
 
 /**
@@ -34,7 +41,7 @@ const signinSchema = Joi.object({
  * @param {*} next
  */
 exports.isInputValidated = async (req, res, next) => {
-  const result = schema.validate(req.body);
+  const result = forgotPasswordSchema.validate(req.body);
   // console.log(result)
   if ('error' in result) {
     res.status(400).json({
@@ -54,7 +61,31 @@ exports.isInputValidated = async (req, res, next) => {
  * @param {*} next
  */
 exports.isPasswordInputValidated = async (req, res, next) => {
-  const result = passwordSchema.validate(req.body);
+  const result = resetPasswordSchema.validate(req.body);
+  // console.log(result)
+  if ('error' in result) {
+    res.status(400).json({
+      error: 1,
+      data: result,
+      msg: 'Validation error(s)',
+    });
+  } else {
+    next();
+  }
+};
+
+/**
+ * Validate user's product code input
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+exports.isProductCodeInputValidated = async (req, res, next) => {
+  const { product_code } = req.body;
+  const { code } = req.query;
+
+  const _product_code = code === undefined ? product_code : code;
+  const result = productCodeSchema.validate({ product_code: _product_code });
   // console.log(result)
   if ('error' in result) {
     res.status(400).json({
@@ -75,7 +106,7 @@ exports.isPasswordInputValidated = async (req, res, next) => {
  */
 exports.isSigninInputValidated = async (req, res, next) => {
   const result = signinSchema.validate(req.body);
-  // console.log(result)
+
   if ('error' in result) {
     res.status(400).json({
       error: 1,
@@ -87,6 +118,89 @@ exports.isSigninInputValidated = async (req, res, next) => {
   }
 };
 
+/**
+ * Validate user's product
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+exports.validateUserProduct = async (req, res, next) => {
+  let { product_code, user } = req.body;
+  const { code } = req.query;
+  try {
+    if (req._data !== undefined) {
+      let { email } = req._data;
+      user = email;
+    }
+
+    const _product_code = code === undefined ? product_code : code;
+
+    // get product
+    const productResult = await models.products.findOne({
+      where: { product_code: _product_code },
+    });
+    if (productResult === null) {
+      res.status(400).json({
+        error: 1,
+        msg: 'Product not found!',
+      });
+    } else {
+      // check user's product
+      const userProduct = await models.users.findOne({
+        include: [{ model: models.roles }],
+        where: {
+          [Op.or]: [{ phone: user }, { email: user }],
+          product_id: productResult.id,
+        },
+      });
+      if (userProduct === null) {
+        res.status(400).json({
+          error: 1,
+          msg: 'Permission Error!',
+        });
+      } else {
+        req.userProduct = userProduct.toJSON();
+
+        next();
+      }
+    }
+  } catch (error) {
+    res.status(400).json({
+      error: 1,
+      msg: error,
+    });
+  }
+};
+
+/**
+ * Check user's scope
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+exports.validateUserScope = async (req, res, next) => {
+  const { scope } = req.query;
+  const { userProduct } = req;
+  // Get Scopes
+
+  const _scope = await userScope(userProduct.role.id, scope);
+  if (userProduct.role.code !== 'SUPER_ADMIN' && _scope === null) {
+    res.status(400).json({
+      error: 1,
+      msg: 'You have been restricted!',
+    });
+  } else {
+    next();
+  }
+};
+
+async function userScope(role_id, scope) {
+  const code = scope === undefined ? null : scope;
+  const _scope = await models.scopes.findOne({
+    where: { role_id, code },
+  });
+  return _scope;
+}
 /**
  * Function to verify the product that a user's role belongs to
  * @param {*} req
@@ -156,88 +270,116 @@ exports.verifyOwner = async (req, res, next) => {
  * @param {*} next
  */
 exports.verifyEmail = async (req, res, next) => {
-  const { access_token } = req.params;
+  const bearerHeader = req.headers['authorization'];
 
-  try {
-    const decrypted_data = await jwt.verify(
-      access_token,
-      process.env.private_sso_key
-    );
-    let user_data = await models.users.findOne({
-      where: { email: decrypted_data.email, sso_id: decrypted_data.otpID },
-    });
+  if (typeof bearerHeader !== 'undefined') {
+    const bearer = bearerHeader.split(' ');
+    const bearerToken = bearer[1];
 
-    if (user_data === null) {
+    try {
+      const decrypted_data = await jwt.verify(
+        bearerToken,
+        process.env.private_sso_key
+      );
+      let user_data = await models.users.findOne({
+        where: { email: decrypted_data.email, sso_id: decrypted_data.otpID },
+      });
+
+      if (user_data === null) {
+        res.status(400).json({
+          error: 1,
+          msg: 'Token is invalid!',
+        });
+      } else {
+        // activate account and activate email
+        await models.users.update(
+          { active: 1, email_verified: 1 },
+          {
+            where: {
+              email: decrypted_data.email,
+              sso_id: decrypted_data.otpID,
+            },
+          }
+        );
+        req._data = {
+          access_token: bearerToken,
+          ...decrypted_data,
+        };
+        next();
+      }
+    } catch (error) {
+      console.log(error);
       res.status(400).json({
         error: 1,
-        msg: 'Token is invalid!',
+        msg: error,
       });
-    } else {
-      // activate account and activate email
-      user_data.active = 1;
-      user_data.email_verified = 1;
-      user_data.save();
-
-      req._data = {
-        access_token,
-        ...decrypted_data,
-      };
-      next();
     }
-  } catch (error) {
-    console.log(error);
+  } else {
     res.status(400).json({
       error: 1,
-      msg: error,
+      msg: 'Authorization is required!',
     });
   }
 };
 
 /**
- * Function to verify password reset otp through the access_token parameter
+ * Function to verify password reset otp through the access_token
  * @param {*} req
  * @param {*} res
  * @param {*} next
  */
 exports.verifyPasswordResetOtp = async (req, res, next) => {
-  const { access_token } = req.params;
+  const bearerHeader = req.headers['authorization'];
 
-  try {
-    const decrypted_data = await jwt.verify(
-      access_token,
-      process.env.private_sso_key
-    );
-    let user_data = await models.users.findOne({
-      where: { email: decrypted_data.email, sso_id: decrypted_data.otpID },
-    });
+  if (typeof bearerHeader !== 'undefined') {
+    const bearer = bearerHeader.split(' ');
+    const bearerToken = bearer[1];
 
-    if (user_data === null) {
-      res.status(400).json({
-        error: 1,
-        msg: 'Token is invalid!',
+    try {
+      const decrypted_data = await jwt.verify(
+        bearerToken,
+        process.env.private_sso_key
+      );
+
+      let user_data = await models.users.findOne({
+        where: { email: decrypted_data.email, sso_id: decrypted_data.otpID },
       });
-    } else {
-      let current_date = new Date().getTime();
-      let password_expiration = new Date(user_data.sso_token_expiry).getTime();
 
-      if (current_date >= password_expiration) {
-        res.json({
+      if (user_data === null) {
+        res.status(400).json({
           error: 1,
-          msg: 'Password reset link has expired!',
+          msg: 'Token is invalid!',
         });
       } else {
-        req._data = {
-          access_token,
-          ...decrypted_data,
-        };
-        next();
+        let current_date = new Date().getTime();
+        let password_expiration = new Date(
+          user_data.sso_token_expiry
+        ).getTime();
+
+        if (current_date >= password_expiration) {
+          res.json({
+            error: 1,
+            msg: 'Password reset link has expired!',
+          });
+        } else {
+          req._data = {
+            access_token: bearerToken,
+            ...decrypted_data,
+          };
+          next();
+        }
       }
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({
+        error: 1,
+        msg: error,
+      });
     }
-  } catch (error) {
-    console.log(error);
+  } else {
     res.status(400).json({
       error: 1,
-      msg: error,
+      msg: 'Authorization is required!',
     });
   }
 };
@@ -248,7 +390,7 @@ exports.verifyPasswordResetOtp = async (req, res, next) => {
  * @param {*} res
  * @param {*} next
  */
-exports.verifyPasswordResetOtpPassedAsHeader = async (req, res, next) => {
+exports.verifyPasswordResetTokenPassedAsHeader = async (req, res, next) => {
   const bearerHeader = req.headers['authorization'];
 
   if (typeof bearerHeader !== 'undefined') {
@@ -282,7 +424,7 @@ exports.verifyPasswordResetOtpPassedAsHeader = async (req, res, next) => {
           });
         } else {
           req._data = {
-            bearerToken,
+            access_token: bearerToken,
             ...decrypted_data,
           };
           next();
@@ -298,7 +440,7 @@ exports.verifyPasswordResetOtpPassedAsHeader = async (req, res, next) => {
   } else {
     res.status(400).json({
       error: 1,
-      msg: {},
+      msg: 'Authorization is required!',
     });
   }
 };
@@ -325,7 +467,7 @@ exports.authenticateUser = async (req, res, next) => {
 
       let user_details = await models.users.findOne({
         where: { email: user_data.email, sso_id: user_data.otpID },
-        include: [models.products, models.clients, models.groups, models.roles],
+        include: [{ model: models.products }, { model: models.roles }],
         attributes: [
           'id',
           'first_name',
@@ -347,16 +489,18 @@ exports.authenticateUser = async (req, res, next) => {
           msg: 'Auth token is invalid!',
         });
       } else {
+        user_details = user_details.toJSON();
+
         req._data = {
-          bearerToken,
-          ...user_details.dataValues,
+          _token: bearerToken,
+          ...user_details,
         };
         next();
       }
     } else {
       res.status(400).json({
         error: 1,
-        msg: {},
+        msg: 'Authorization is required!',
       });
     }
   } catch (error) {
@@ -364,71 +508,6 @@ exports.authenticateUser = async (req, res, next) => {
     res.status(400).json({
       error: 1,
       msg: error,
-    });
-  }
-};
-
-/**
- * Function to authenticate admin
- * @param {*} req
- * @param {*} res
- * @param {*} next
- */
-exports.authenticateAdmin = async (req, res, next) => {
-  const bearerHeader = req.headers['authorization'];
-
-  if (typeof bearerHeader !== 'undefined') {
-    const bearer = bearerHeader.split(' ');
-    const bearerToken = bearer[1];
-
-    const user_data = await jwt.verify(
-      bearerToken,
-      process.env.private_sso_key
-    );
-
-    let user_details = await models.users.findOne({
-      where: { email: user_data.email, sso_id: user_data.otpID },
-      include: [models.products, models.roles],
-      attributes: [
-        'id',
-        'first_name',
-        'last_name',
-        'name',
-        'email',
-        'phone',
-        'phone_verified',
-        'email_verified',
-        'active',
-        'createdAt',
-        'updatedAt',
-      ],
-    });
-
-    if (user_details === null) {
-      res.status(400).json({
-        error: 1,
-        msg: 'Auth token is invalid!',
-      });
-    } else if (
-      user_details.product.product_code !== 'OAUTH' &&
-      !user_details.role.name.toLowerCase().includes('admin')
-    ) {
-      res.status(400).json({
-        error: 1,
-        msg: 'Permission Error!',
-      });
-    } else {
-      //   req._data = {
-      //     bearerToken,
-      //     ...user_details.dataValues,
-      //   };
-      next();
-    }
-  } else {
-    console.log;
-    res.status(400).json({
-      error: 1,
-      msg: {},
     });
   }
 };

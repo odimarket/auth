@@ -29,15 +29,6 @@ module.exports = {
       phone_verified: {
         type: Sequelize.STRING,
       },
-      product_id: {
-        type: Sequelize.STRING,
-      },
-      client_id: {
-        type: Sequelize.STRING,
-      },
-      group_id: {
-        type: Sequelize.STRING,
-      },
       role_id: {
         type: Sequelize.STRING,
       },
@@ -46,6 +37,12 @@ module.exports = {
       },
       sso_token_expiry: {
         type: Sequelize.DATE,
+      },
+      product_id: {
+        type: Sequelize.STRING,
+      },
+      client_id: {
+        type: Sequelize.STRING,
       },
       email_verified: {
         type: Sequelize.STRING,

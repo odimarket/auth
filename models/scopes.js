@@ -10,9 +10,6 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      scopes.belongsTo(models.groups, {
-        foreignKey: 'group_id',
-      });
       scopes.belongsTo(models.roles, {
         foreignKey: 'role_id',
       });
@@ -22,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: DataTypes.STRING,
       description: DataTypes.TEXT,
-      group_id: DataTypes.STRING,
+      code: DataTypes.STRING,
       role_id: DataTypes.STRING,
     },
     {

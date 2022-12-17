@@ -82,7 +82,7 @@ exports.sendAuthUser = async (req, res) => {
       params.logo = Logo;
       params.header_color = 'white';
 
-      const link = `http://localhost:4000/verify/${token}`;
+      const link = `${process.env.WEB_URL}/verify/${token}`;
 
       params.body = `<p style="font-size:1.5em;"><b>Hi, ${result.first_name}</b></p>`;
 
@@ -143,8 +143,8 @@ exports.sendAuthUser = async (req, res) => {
  * @param {*} req
  * @param {*} res
  */
-exports.RenderUser = async (req, res) => {
-  res.json({
+exports.RenderUser = (req, res) => {
+  res.status(200).json({
     error: 0,
     data: req._data,
   });
@@ -194,7 +194,7 @@ exports.verifyAuthUser = async (req, res) => {
  * @param {*} res
  */
 exports.resetPassword = async (req, res) => {
-  let { password, password_confirmation } = req.body;
+  let { password } = req.body;
   // const access_token = req.access_token;
   const user_data = req._data;
   try {

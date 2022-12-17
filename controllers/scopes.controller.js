@@ -1,5 +1,4 @@
 const Scopes = require('../models').scopes;
-const Groups = require('../models').groups;
 const Roles = require('../models').roles;
 
 /**
@@ -8,41 +7,36 @@ const Roles = require('../models').roles;
  * @param {*} res
  */
 exports.createScope = async (req, res) => {
-  const { name, description, group_id, role_id } = req.body;
+  const { name, code, role_id } = req.body;
   try {
     let result = await Scopes.findOne({ where: { name } });
+    let ScopeCodeResult = await Scopes.findOne({ where: { code } });
 
     if (result !== null) {
       res.status(200).json({
         error: 1,
         msg: 'Scope exists!',
       });
+    } else if (ScopeCodeResult !== null) {
+      res.status(200).json({
+        error: 1,
+        msg: 'Code exists!',
+      });
     } else {
-      result = await Groups.findOne({ where: { id: group_id } });
+      result = await Roles.findOne({ where: { id: role_id } });
       if (result === null) {
         res.status(200).json({
           error: 1,
-          msg: 'Group does not exist!',
+          msg: 'Role does not exist!',
         });
       } else {
-        const result2 = await Roles.findOne({ where: { id: role_id } });
-        if (result2 === null) {
-          res.status(200).json({
-            error: 1,
-            msg: 'Role does not exist!',
-          });
-        } else {
-          const response = await Scopes.create({
-            name,
-            description,
-            group_id,
-            role_id,
-          });
-          res.status(200).json({
-            error: 0,
-            msg: 'Scope created successfully!',
-          });
-        }
+        const response = await Scopes.create({
+          ...req.body,
+        });
+        res.status(200).json({
+          error: 0,
+          msg: 'Scope created successfully!',
+        });
       }
     }
   } catch (error) {
@@ -59,13 +53,24 @@ exports.createScope = async (req, res) => {
  * @param {*} res
  */
 exports.getAllScopes = async (req, res) => {
+  const { userProduct } = req;
+
+  const whereParam =
+    typeof code !== 'undefined'
+      ? {
+          model: Roles,
+          where: { code: userProduct.role.code },
+        }
+      : {
+          model: Roles,
+        };
   try {
-    const result = await Scopes.findAll({
-      include: [Groups, Roles],
+    const results = await Scopes.findAll({
+      include: [Roles],
     });
     res.json({
       error: 0,
-      result,
+      results,
     });
   } catch (error) {
     res.status(400).json({
@@ -83,10 +88,7 @@ exports.getAllScopes = async (req, res) => {
 exports.getScopeByID = async (req, res) => {
   const { id } = req.params;
   try {
-    let result = await Scopes.findOne({
-      where: { id },
-      include: [Groups, Roles],
-    });
+    let result = await Scopes.findOne({ where: { id }, include: Roles });
     result = result === null ? {} : result;
     res.json({
       error: 0,

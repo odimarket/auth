@@ -10,8 +10,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      roles.belongsTo(models.groups, {
-        foreignKey: 'group_id',
+      roles.belongsTo(models.products, {
+        foreignKey: 'product_id',
+      });
+      roles.belongsTo(models.clients, {
+        foreignKey: 'client_id',
+      });
+      roles.hasMany(models.users, {
+        foreignKey: 'role_id',
       });
     }
   }
@@ -19,7 +25,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: DataTypes.STRING,
       description: DataTypes.TEXT,
-      group_id: DataTypes.STRING,
+      code: DataTypes.STRING,
+      product_id: DataTypes.STRING,
+      client_id: DataTypes.STRING,
     },
     {
       sequelize,

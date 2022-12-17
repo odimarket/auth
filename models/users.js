@@ -14,14 +14,11 @@ module.exports = (sequelize, DataTypes) => {
       users.belongsTo(models.products, {
         foreignKey: 'product_id',
       });
-      users.belongsTo(models.clients, {
-        foreignKey: 'client_id',
-      });
-      users.belongsTo(models.groups, {
-        foreignKey: 'group_id',
-      });
       users.belongsTo(models.roles, {
         foreignKey: 'role_id',
+      });
+      users.belongsTo(models.clients, {
+        foreignKey: 'client_id',
       });
     }
   }
@@ -34,7 +31,6 @@ module.exports = (sequelize, DataTypes) => {
       phone: DataTypes.STRING,
       password: DataTypes.STRING,
       phone_verified: DataTypes.STRING,
-      group_id: DataTypes.STRING,
       role_id: DataTypes.STRING,
       sso_id: DataTypes.STRING,
       sso_token_expiry: DataTypes.DATE,

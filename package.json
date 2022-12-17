@@ -4,6 +4,7 @@
   "description": "Auth endpoint for odimarket",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "dev": "nodemon index.js",
     "migrate": "npx sequelize-cli db:migrate"
   },
@@ -20,6 +21,7 @@
   "homepage": "https://github.com/odimarket/odimarket_auth#readme",
   "dependencies": {
     "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-session": "^1.17.3",

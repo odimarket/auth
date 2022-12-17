@@ -14,7 +14,13 @@ module.exports = {
       description: {
         type: Sequelize.TEXT,
       },
-      group_id: {
+      code: {
+        type: Sequelize.STRING,
+      },
+      product_id: {
+        type: Sequelize.STRING,
+      },
+      client_id: {
         type: Sequelize.STRING,
       },
       createdAt: {

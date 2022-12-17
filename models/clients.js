@@ -1,6 +1,8 @@
 'use strict';
-const { Model } = require('sequelize');
-const uuid = require('uuid');
+const {
+  Model
+} = require('sequelize');
+const uuid = require("uuid");
 module.exports = (sequelize, DataTypes) => {
   class clients extends Model {
     /**
@@ -11,22 +13,19 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       clients.belongsTo(models.products, {
-        foreignKey: 'product_id',
-      });
+        foreignKey: "product_id"
+      })
     }
   }
-  clients.init(
-    {
-      name: DataTypes.STRING,
-      secret: DataTypes.STRING,
-      url: DataTypes.STRING,
-      product_id: DataTypes.STRING,
-    },
-    {
-      sequelize,
-      modelName: 'clients',
-    }
-  );
-  clients.beforeCreate((client) => (client.id = uuid.v4()));
+  clients.init({
+    name: DataTypes.STRING,
+    secret: DataTypes.STRING,
+    url: DataTypes.STRING,
+    product_id: DataTypes.STRING
+  }, {
+    sequelize,
+    modelName: 'clients',
+  });
+  clients.beforeCreate(client => client.id = uuid.v4());
   return clients;
 };

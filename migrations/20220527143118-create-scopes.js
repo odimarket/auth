@@ -14,7 +14,7 @@ module.exports = {
       description: {
         type: Sequelize.TEXT,
       },
-      group_id: {
+      code: {
         type: Sequelize.STRING,
       },
       role_id: {

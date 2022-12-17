@@ -6,43 +6,74 @@ const authCtrl = require('../controllers/auth.controller');
 const userCtrl = require('../controllers/users.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
-router.post('/send', authMiddleware.isInputValidated, authCtrl.sendAuthUser);
+// Initiate password reset
+router.post(
+  '/send',
+  [authMiddleware.isInputValidated, authMiddleware.validateUserProduct],
+  authCtrl.sendAuthUser
+);
+
+// Verify reset password
 router.get(
-  '/verify/:access_token',
+  '/verify/reset',
   authMiddleware.verifyPasswordResetOtp,
   authCtrl.RenderUser
 );
-router.get(
-  '/verify/email/:access_token',
-  authMiddleware.verifyEmail,
-  authCtrl.RenderUser
-);
 
+// Verify account through email upon signup
+router.get('/verify/email', authMiddleware.verifyEmail, authCtrl.RenderUser);
+
+// reset password
 router.post(
   '/password/reset',
   [
+    authMiddleware.verifyPasswordResetTokenPassedAsHeader,
     authMiddleware.isPasswordInputValidated,
-    authMiddleware.verifyPasswordResetOtpPassedAsHeader,
+    authMiddleware.validateUserProduct,
   ],
   authCtrl.resetPassword
 );
 
-router.get('/user', authMiddleware.authenticateUser, authCtrl.RenderUser);
+//This is to verify an authorized user
+router.post(
+  '/verify',
+  [
+    authMiddleware.authenticateUser,
+    authMiddleware.isProductCodeInputValidated,
+    authMiddleware.validateUserProduct,
+  ],
+  authCtrl.RenderUser
+);
+
+// Signin a user
 router.post(
   '/signin',
   authMiddleware.isSigninInputValidated,
   userCtrl.signInUser
 );
 
-router.get(
+// activate a user
+router.put(
   '/activate/:user_id',
-  authMiddleware.authenticateAdmin,
+  [
+    authMiddleware.authenticateUser,
+    authMiddleware.isProductCodeInputValidated,
+    authMiddleware.validateUserProduct,
+    authMiddleware.validateUserScope,
+  ],
   authCtrl.activateUser
 );
 
-router.get(
+// deactivate a user
+router.put(
   '/deactivate/:user_id',
-  authMiddleware.authenticateAdmin,
+
+  [
+    authMiddleware.authenticateUser,
+    authMiddleware.isProductCodeInputValidated,
+    authMiddleware.validateUserProduct,
+    authMiddleware.validateUserScope,
+  ],
   authCtrl.deactivateUser
 );
 
