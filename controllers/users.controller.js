@@ -224,6 +224,7 @@ exports.signInUser = async (req, res) => {
               });
             } else {
               const raw_data = {
+                id: result.id,
                 first_name: result.first_name,
                 last_name: result.last_name,
                 name: result.name,
