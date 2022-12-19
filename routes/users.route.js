@@ -7,7 +7,7 @@ const usersMiddleware = require('../middleware/users.middleware');
 const authMiddleware = require('../middleware/auth.middleware');
 
 router.post('/create', usersMiddleware.isInputValidated, usersCtrl.createUser);
-router.post(
+router.get(
   '/all',
   [
     authMiddleware.authenticateUser,

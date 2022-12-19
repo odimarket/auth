@@ -14,7 +14,6 @@ const hashPassword = (password) => {
 
 const forgotPasswordSchema = Joi.object({
   user: Joi.string().required(),
-  product_code: Joi.string().required(),
 });
 
 const productCodeSchema = Joi.object({
@@ -22,10 +21,9 @@ const productCodeSchema = Joi.object({
 });
 
 const resetPasswordSchema = Joi.object({
-  password: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
+  password: Joi.string().required(),
 
   password_confirmation: Joi.ref('password'),
-  product_code: Joi.string().required(),
 });
 
 const signinSchema = Joi.object({

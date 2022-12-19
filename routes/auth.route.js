@@ -7,11 +7,7 @@ const userCtrl = require('../controllers/users.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
 // Initiate password reset
-router.post(
-  '/send',
-  [authMiddleware.isInputValidated, authMiddleware.validateUserProduct],
-  authCtrl.sendAuthUser
-);
+router.post('/send', [authMiddleware.isInputValidated], authCtrl.sendAuthUser);
 
 // Verify reset password
 router.get(
@@ -29,21 +25,12 @@ router.post(
   [
     authMiddleware.verifyPasswordResetTokenPassedAsHeader,
     authMiddleware.isPasswordInputValidated,
-    authMiddleware.validateUserProduct,
   ],
   authCtrl.resetPassword
 );
 
 //This is to verify an authorized user
-router.post(
-  '/verify',
-  [
-    authMiddleware.authenticateUser,
-    authMiddleware.isProductCodeInputValidated,
-    authMiddleware.validateUserProduct,
-  ],
-  authCtrl.RenderUser
-);
+router.post('/verify', [authMiddleware.authenticateUser], authCtrl.RenderUser);
 
 // Signin a user
 router.post(

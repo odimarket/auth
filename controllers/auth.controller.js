@@ -1,4 +1,6 @@
 const Users = require('../models').users;
+const Clients = require('../models').clients;
+const Products = require('../models').products;
 
 const {
   TermiiMailProvider,
@@ -28,6 +30,7 @@ exports.sendAuthUser = async (req, res) => {
   let { user } = req.body;
   try {
     let result = await Users.findOne({
+      include: [Clients, Products],
       where: {
         [Op.or]: [{ email: user }, { phone: user }],
       },
@@ -82,7 +85,7 @@ exports.sendAuthUser = async (req, res) => {
       params.logo = Logo;
       params.header_color = 'white';
 
-      const link = `${process.env.WEB_URL}/verify/${token}`;
+      const link = `${result.client.url}/verify/${token}`;
 
       params.body = `<p style="font-size:1.5em;"><b>Hi, ${result.first_name}</b></p>`;
 
