@@ -50,7 +50,7 @@ exports.createUser = async (req, res) => {
     });
 
     if (result !== null) {
-      res.status(200).json({
+      res.status(400).json({
         error: 1,
         msg: 'User account exists!',
       });
@@ -182,20 +182,20 @@ exports.signInUser = async (req, res) => {
       include: [{ model: Products }, { model: Roles }, { model: Clients }],
     });
     if (result === null) {
-      res.status(200).json({
+      res.status(400).json({
         error: 1,
         msg: 'Incorrect Login details!',
       });
     } else {
       if (result.active !== 1) {
-        res.status(200).json({
+        res.status(400).json({
           error: 1,
           msg: 'Account is not active',
         });
       } else {
         const match = await bcrypt.compare(password, result.password);
         if (!match) {
-          res.status(200).json({
+          res.status(400).json({
             error: 1,
             msg: 'Incorrect Login details!',
           });
